@@ -10,19 +10,26 @@ export default class Grid {
     gridElement.style.setProperty("--grid-size", GRID_CELL);
 
     this.#cells = createGridElement(gridElement).map(
-      (c,i) => new Cell(c, i % GRID_CELL, Math.floor((i / GRID_CELL) % GRID_CELL))
+      (c, i) =>
+        new Cell(c, i % GRID_CELL, Math.floor((i / GRID_CELL) % GRID_CELL))
     );
   }
 
-  rendomTile(gridElement){
-      const x = Math.floor(Math.random() * 4);
-      const y = Math.floor(Math.random() * 4);
-      const tile = document.createElement('div');
-      tile.classList.add('tile');
-      tile.style.setProperty('--x', x);
-      tile.style.setProperty('--y', y);
-      tile.textContent = 4;
-      gridElement.append(tile);
+  get cellsByColumn(){
+    return this.#cells.reduce((gridCell, cell) => {
+        gridCell[cell.x] = gridCell[cell.x] || [];
+        gridCell[cell.x][cell.y] = cell;
+        return gridCell;
+    }, []);
+  }
+
+  get #emptyCells() {
+    return this.#cells.filter((c) => c.tile == null);
+  }
+
+  rendomEmptyCells() {
+    const randomIndex = Math.floor(Math.random() * this.#emptyCells.length);
+    return this.#emptyCells[randomIndex];
   }
 }
 
@@ -30,15 +37,32 @@ class Cell {
   #x;
   #y;
   #cell;
+  #tile;
+
   constructor(cell, x, y) {
     this.#x = x;
     this.#y = y;
     this.#cell = cell;
   }
-}
 
-class Tile{
-    
+  get x(){
+      return this.#x;
+  }
+  
+  get y(){
+      return this.#y;
+  }
+
+  get tile() {
+    return this.#tile;
+  }
+
+  set tile(value) {
+    this.#tile = value;
+    if(!value) return;
+    this.#tile.x = this.#x;
+    this.#tile.y = this.#y;
+  }
 }
 
 function createGridElement(element) {

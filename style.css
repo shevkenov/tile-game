@@ -28,8 +28,6 @@ body{
 }
 
 .tile{
-    --background-lightness: 80%;
-    --text-lightness: 30%;
     position: absolute;
     width: var(--cell-size);
     height: var(--cell-size);
