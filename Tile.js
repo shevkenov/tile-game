@@ -10,7 +10,12 @@ export default class Tial{
         this.value = value;
     }
 
+    get value(){
+        return this.#value;
+    }
+
     set value(v){
+        this.#value = v;
         this.#tileElement.textContent = v;
         const power = Math.log2(v);
         const backgroundLightness = 100 - power * 9;
@@ -26,5 +31,9 @@ export default class Tial{
     set y(value){
         this.#y = value;
         this.#tileElement.style.setProperty("--y", value);
+    }
+
+    remove(){
+        this.#tileElement.remove();
     }
 }
