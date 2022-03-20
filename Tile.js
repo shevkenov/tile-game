@@ -36,4 +36,10 @@ export default class Tial{
     remove(){
         this.#tileElement.remove();
     }
+
+    waitForTransition(){
+        return Promise.resolve( resolve => {
+            this.#tileElement.addEventListener('transitionend', resolve, {once: true})
+        })
+    }
 }

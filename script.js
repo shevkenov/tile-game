@@ -13,67 +13,127 @@ function handleSetup() {
   window.addEventListener("keydown", handleMove, { once: true });
 }
 
-function handleMove(e) {
+async function handleMove(e) {
   switch (e.key) {
     case "ArrowUp":
-      moveUp();
+      if(!canMoveUp()){
+        handleSetup();
+        return;
+      }
+      await moveUp();
       break;
     case "ArrowDown":
-      moveDown();
+      if(!canMoveDown()){
+        handleSetup();
+        return;
+      }
+      await moveDown();
       break;
     case "ArrowLeft":
-      moveLeft();
+      if(!canMoveLeft()){
+        handleSetup();
+        return;
+      }
+      await moveLeft();
       break;
     case "ArrowRight":
-      moveRight();
+      if(!canMoveRight()){
+        handleSetup();
+        return;
+      }
+      await moveRight();
       break;
     default:
       handleSetup();
       return;
   }
 
-  grid.cells.forEach(c => c.mergeTiles());
-  console.log(grid.cells);
+  grid.cells.forEach((c) => c.mergeTiles());
+
+  const newTail = new Tile(gameBoard);
+  grid.rendomEmptyCells().tile = newTail;
+
+  if(!canMoveDown() && !canMoveLeft() && !canMoveRight() && !canMoveUp()){
+    console.log('lost')
+    alert("You loose the game!");
+
+    return;
+  }
 
   handleSetup();
 }
 
-function moveUp(){
-    slideTail(grid.cellsByColumn);
+function moveUp() {
+  return slideTail(grid.cellsByColumn);
 }
 
-function moveDown(){
-  slideTail(grid.cellsByColumn.map(group => [...group].reverse()))
+function moveDown() {
+  return slideTail(grid.cellsByColumn.map((group) => [...group].reverse()));
 }
 
-function moveLeft(){
-  slideTail(grid.cellsByRow)
+function moveLeft() {
+  return slideTail(grid.cellsByRow);
 }
 
-function moveRight(){
-  slideTail(grid.cellsByRow.map(group => [...group].reverse()))
+function moveRight() {
+  return slideTail(grid.cellsByRow.map((group) => [...group].reverse()));
 }
 
-function slideTail(grid){
-    grid.forEach(group => {
-        for (let i = 1; i < group.length; i++) {
-            const cell = group[i];
-            if(cell.tile == null) continue
-            let lastValidCell;
-            for (let j = i - 1; j >= 0; j--) {
-                const moveToCell = group[j];
-                if(!moveToCell.canAccept(cell.tile)) break;
-                lastValidCell = moveToCell;
-            }
-
-            if(lastValidCell != null){
-                if(lastValidCell.tile != null){
-                    lastValidCell.mergeTile = cell.tile;
-                }else{
-                    lastValidCell.tile = cell.tile;
-                }
-                cell.tile = null;
-            }
+function slideTail(grid) {
+  return Promise.all(
+    grid.flatMap((group) => {
+      const promises = [];
+      for (let i = 1; i < group.length; i++) {
+        const cell = group[i];
+        if (!cell.tile) continue;
+        let lastValidCell;
+        for (let j = i - 1; j >= 0; j--) {
+          const moveToCell = group[j];
+          if (!moveToCell.canAccept(cell.tile)) break;
+          lastValidCell = moveToCell;
         }
+
+        if (lastValidCell != null) {
+          //console.log(cell.tile)
+          promises.push(cell.tile.waitForTransition())
+          if (lastValidCell.tile != null) {
+            lastValidCell.mergeTile = cell.tile;
+          } else {
+            lastValidCell.tile = cell.tile;
+          }
+          cell.tile = null;
+        }
+      }
+
+      return promises;
     })
+  );
 }
+
+function canMoveUp(){
+  return canMove(grid.cellsByColumn);
+}
+function canMoveDown(){
+  return canMove(grid.cellsByColumn.map(row => [...row].reverse()));
+}
+function canMoveLeft(){
+  return canMove(grid.cellsByRow);
+}
+function canMoveRight(){
+  return canMove(grid.cellsByRow.map(row => [...row].reverse()));
+}
+
+function canMove(cells){
+  return cells.some(row => {
+    return row.some((cell, i) => {
+      // if it is the first row, cannot nove further
+      if(i == 0) return false;
+      // if cell is empty, no need to move
+      if(!cell.tile) return false;
+
+      const moveToCell = row[i-1];
+      return (moveToCell.canAccept(cell.tile));
+    })
+  })
+}
+
